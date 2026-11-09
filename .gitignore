@@ -15,6 +15,7 @@
 .env.*
 *.key
 *.pem
+*.csv
 
 # 💻 System files
 .DS_Store
