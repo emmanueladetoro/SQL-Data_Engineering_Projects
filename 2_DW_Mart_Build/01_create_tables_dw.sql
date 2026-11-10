@@ -1,22 +1,25 @@
 -- Step 1: DW - Create star schema tables
 
+-- Drop existing tabes if they exist (for Idempotency)
 DROP TABLE IF EXISTS skills_job_dim;
 DROP TABLE IF EXISTS job_postings_fact;
 DROP TABLE IF EXISTS company_dim;
 DROP TABLE IF EXISTS skills_dim;
 
-
+-- Create company_dim table
 CREATE TABLE company_dim (
     company_id INTEGER PRIMARY KEY,
     name        VARCHAR
 );
 
+-- Create skills_dim table
 CREATE TABLE skills_dim (
     skill_id    INTEGER     PRIMARY KEY,
     skills       VARCHAR,
     type        VARCHAR
 );
 
+-- Create job_postings_fact table (must be created before skills_job_dim)
 CREATE TABLE job_postings_fact (
     job_id                  INTEGER     PRIMARY KEY,
     company_id              INTEGER,
@@ -37,6 +40,7 @@ CREATE TABLE job_postings_fact (
     FOREIGN KEY (company_id) REFERENCES company_dim(company_id)
 );
 
+-- Create skills_job_dim bridge table (after job_postings_fact exists)
 CREATE TABLE skills_job_dim (
     skill_id    INTEGER,
     job_id      INTEGER,
@@ -45,4 +49,5 @@ CREATE TABLE skills_job_dim (
     FOREIGN KEY (job_id) REFERENCES job_postings_fact(job_id)
 );
 
+-- Verify tables were created
 SHOW TABLES;

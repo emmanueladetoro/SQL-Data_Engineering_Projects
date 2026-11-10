@@ -1,5 +1,6 @@
 -- Step 2: DW - Loading data from csv files into tables
 
+-- Load dimension tables first (no FK dependencies)
 SELECT '=== Loading company_dim Table ===' AS info;
 
 INSERT INTO company_dim(company_id, name)
@@ -14,7 +15,7 @@ SELECT skill_id, skills, type
 FROM read_csv('https://storage.googleapis.com/sql_de/skills_dim.csv',
         AUTO_DETECT=true);
 
-
+-- Load fact table second (FK references company_dim - must load after dimensions)
 SELECT '=== Loading job_postings_fact Table ===' AS info;
 
 INSERT INTO job_postings_fact (
@@ -40,6 +41,8 @@ FROM read_csv('https://storage.googleapis.com/sql_de/skills_job_dim.csv',
         AUTO_DETECT=true);
 
 -- Data Validation Query
+
+-- Verify data was loaded correctly
 SELECT 'Compnay Dim' AS table_name, COUNT(*) AS record_count FROM company_dim
 UNION ALL
 SELECT 'skills_dim', COUNT(*) FROM skills_dim
@@ -48,6 +51,7 @@ SELECT 'Job Postings Fact', COUNT(*) FROM job_postings_fact
 UNION ALL
 SELECT 'Skills Job Dim', COUNT(*) FROM skills_job_dim;
 
+-- Show sample data
 SELECT '=== Company Dimension Sample ===' AS info;
 SELECT * FROM company_dim LIMIT 5;
 

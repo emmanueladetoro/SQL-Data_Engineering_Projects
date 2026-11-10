@@ -2,20 +2,22 @@
 
 SELECT '== Updating Roles for Priority Mart ==' AS info;
 
--- Update Data Engineer to Priority 1
+-- Step 1: Update existing priority role
+-- Update Data Engineer priority level to 1
 UPDATE priority_mart.priority_roles
 SET priority_lvl = 1
 WHERE role_name = 'Data Engineer';
 
--- Add Data Scientist as Level 3
+-- Step 2: Insert new priority role
+-- Add Data Scientist as a new priority role with level 2
 INSERT INTO priority_mart.priority_roles (role_id, role_name, priority_lvl)
 VALUES (4, 'Data Scienctist', 3);
 
 SELECT * FROM priority_mart.priority_roles;
 
 
--- The Scipts that does the incrimental loadidng/update
-
+-- Step 3: Create temporary source table
+-- This table contains the current state of priority jobs from the data warehouse
 SELECT '== Creating Temp Source Table Priority Mart ==' AS info;
 -- Create TEMP Table
 CREATE OR REPLACE TEMP TABLE src_priority_jobs AS 
@@ -35,8 +37,13 @@ INNER JOIN priority_mart.priority_roles AS r
 
 
 SELECT '== Batch Updating priority_jobs_snapshot for Priority Mart ==' AS info;
--- MERGE INTO
-MERGE INTO priority_mart.priority_jobs_snapshot AS tgt
+
+-- Step 4: MERGE operation to update snapshot
+-- This MERGE statement handles:
+-- - Updates when priority_lvl changes (WHEN MATCHED)
+-- - Inserts for new jobs (WHEN NOT MATCHED)
+-- - Deletes for jobs no longer in source (WHEN NOT MATCHED BY SOURCE)
+MERGE INTO priority_mart.priority_jobs_snapshot AS tgt              -- updated to use priority_mart schema
 USING  src_priority_jobs AS src
 ON tgt.job_id = src.job_id
 
@@ -46,22 +53,22 @@ WHEN MATCHED AND tgt.priority_lvl IS DISTINCT FROM src.priority_lvl THEN
         updated_at = src.updated_at
 WHEN NOT MATCHED THEN
     INSERT (
-    job_id,
-    job_title_short,
-    company_name,
-    job_posted_date,
-    salary_year_avg,
-    priority_lvl,
-    updated_at
+            job_id,
+            job_title_short,
+            company_name,
+            job_posted_date,
+            salary_year_avg,
+            priority_lvl,
+            updated_at
 )
     VALUES ( 
-        src.job_id,
-        src.job_title_short,
-        src.company_name,
-        src.job_posted_date,
-        src.salary_year_avg,
-        src.priority_lvl,
-        src.updated_at
+            src.job_id,
+            src.job_title_short,
+            src.company_name,
+            src.job_posted_date,
+            src.salary_year_avg,
+            src.priority_lvl,
+            src.updated_at
     )
 WHEN NOT MATCHED BY SOURCE THEN DELETE;
 

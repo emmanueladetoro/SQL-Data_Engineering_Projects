@@ -1,17 +1,21 @@
 -- Step 5: Mart - Create priority roles mart
 
+-- Drop existing mart schema if it exists (for idempotency)
 DROP SCHEMA IF EXISTS priority_mart CASCADE;
 
+-- Step 1: Create the mart schema
 CREATE SCHEMA priority_mart;
 
+-- Step 2: Create priority roles dimension table
+-- This table defines priority levels for different job roles
 SELECT '== Loading Roles for Priority Mart ==' AS info;
-CREATE TABLE priority_mart.priority_roles (
+CREATE TABLE priority_mart.priority_roles (                         -- updated to use priority_mart schema & remove 'OR REPLACE
     role_id             INTEGER PRIMARY KEY,
     role_name           VARCHAR,
     priority_lvl        INTEGER
 );
 
-INSERT INTO priority_mart.priority_roles (role_id, role_name, priority_lvl)
+INSERT INTO priority_mart.priority_roles (role_id, role_name, priority_lvl)             -- updated to use priority_mart schema
 VALUES
     (1, 'Data Engineer', 2),
     (2, 'Senior Data Engineer', 1),
@@ -19,8 +23,10 @@ VALUES
 
 SELECT * FROM priority_mart.priority_roles;
 
+-- Step 3: Create priority jobs snapshot table
+-- This table contains a snapshot of jobs with their priority levels
 SELECT '== Loading Priority Job Snapshot Priority Mart ==' AS info;
-CREATE OR REPLACE TABLE priority_mart.priority_jobs_snapshot (
+CREATE OR REPLACE TABLE priority_mart.priority_jobs_snapshot (                              -- updated to use priority_mart schema
     job_id              INT PRIMARY KEY,
     job_title_short     VARCHAR,
     company_name        VARCHAR,
@@ -47,13 +53,14 @@ SELECT
     jpf.salary_year_avg,
     r.priority_lvl,
     CURRENT_TIMESTAMP
-FROM job_postings_fact AS jpf
-LEFT JOIN company_dim AS cd
+FROM job_postings_fact AS jpf               -- updated to use main schema
+LEFT JOIN company_dim AS cd                 -- updated to use main schema
     ON jpf.company_id = cd.company_id
-INNER JOIN priority_mart.priority_roles AS r
+INNER JOIN priority_mart.priority_roles AS r        -- updated to use priority_mart schema
     ON jpf.job_title_short = r.role_name;
 
 
+-- Show sample data from each table
 SELECT 
     job_title_short,
     COUNT(*) AS job_count,

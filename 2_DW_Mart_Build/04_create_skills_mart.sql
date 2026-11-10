@@ -1,12 +1,15 @@
 -- Step 4: Mart - Create skills demand mart
 
+-- Drop existing mart schema if it exists (for idempotency)
 DROP SCHEMA IF EXISTS skills_mart CASCADE;
 DROP TABLE IF EXISTS skills_mart.dim_skills;
 DROP TABLE IF EXISTS  skills_mart.dim_date_month;
 DROP TABLE IF EXISTS skills_mart.fact_skill_demand_monthly;
 
+-- Step 1: Create the mart schema
 CREATE SCHEMA skills_mart;
 
+-- 1. Skills dimension
 CREATE TABLE skills_mart.dim_skills (
     skill_id    INTEGER PRIMARY KEY,
     skills      VARCHAR,
@@ -25,7 +28,7 @@ SELECT
     type
 FROM skills_dim;
  
-
+-- 2. Month-level date dimension (enhanced with quarter and other attributes)
 CREATE TABLE skills_mart.dim_date_month (
     month_start_date        DATE    PRIMARY KEY,
     year                    INTEGER,
@@ -55,6 +58,9 @@ SELECT DISTINCT
 FROM job_postings_fact
 ORDER BY month_start_date;
 
+-- Step 3: Create fact table - fact_skill_demand_monthly
+-- Grain: skill_id + month_start_date + job_title_short
+-- All measures are additive (counts and sums) - safe to re-aggregate
 CREATE TABLE skills_mart.fact_skill_demand_monthly (
     skill_id                            INTEGER,
     month_start_date                    DATE,
@@ -96,7 +102,9 @@ SELECT
     skill_id,
     month_start_date,
     job_title_short,
+     -- Additive counts
     COUNT(*) AS postings_count,
+    -- Remote / benefits / degree flags (additive counts)
     SUM(is_remote) AS remote_postings_count,
     SUM(has_health_insurance) AS health_insurance_postings_count,
     SUM(no_degree_mentioned) AS no_degree_mentioned_postings_count
@@ -107,6 +115,7 @@ ORDER BY skill_id, month_start_date, job_title_short;
 
 
 -- Data Validation
+-- Verify mart was created
 SELECT 'Skill Dimension' AS table_name, COUNT(*) AS record_count FROM skills_mart.dim_skills
 UNION ALL
 SELECT 'Date Month Dimension', COUNT(*) FROM skills_mart.dim_date_month

@@ -1,12 +1,19 @@
 -- Step 3: mart - Create flat mart table
 
+-- Drop existing flat mart schema if it exists (for idempotency)
 DROP SCHEMA IF EXISTS flat_mart CASCADE;
 
+-- Create the flat mart schema
 CREATE SCHEMA flat_mart;
 
 SELECT '=== Loading flat Mart  ===' AS info;
+
+-- Create flat mart table
+-- This flattens the star schema into a single denormalized table
+-- Each row represents one job posting with all dimensions included
 CREATE OR REPLACE TABLE flat_mart.job_postings AS
 SELECT
+ -- Fact table fields
     jpf.job_id, 
     jpf.job_title_short, 
     jpf.job_title, 
